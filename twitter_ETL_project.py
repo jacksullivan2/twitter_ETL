@@ -3,7 +3,18 @@ from tweepy import OAuthHandler
 from tweepy import Stream 
 from twitter_credentials import *
 import json 
-from datetime import datetime
+import mysql.connector
+from datetime import datetime 
+import jack_passwords 
+
+
+	
+db = mysql.connector.connect(
+	host='localhost',
+	user='root',
+	password=jack_passwords.mysql_server_password(),
+	database='cryptocurrency')
+
 
 ## Twitter Authenticator class ##
 class Authenticator():
@@ -44,11 +55,37 @@ class MyListener(StreamListener):
 		with open(self.filename, 'a') as file_object:
 				file_object.write(data)
 		
+		# The API returns each tweet in the form of a JSON string. Use the json.loads() method to convert that string into a python object 
+		# which allows us to easily access the data.
 		tweet_dict = json.loads(data)
-		time = tweet_dict['created_at']
+
+		# If I convert our python object (dictionary) back into a JSON string with the indent= argument, this gives us a readable JSON 
+		# string which I can make sense of and easily see what to extract. I've looked through this string and worked out what to extract.
+		#print(json.dumps(tweet_dict, indent=2))
+
+		time = datetime.strptime(tweet_dict['created_at'], "%a %b %d %X %z %Y")
 		tweet = tweet_dict['text']
-		print(time, tweet)
-		print()
+		username = tweet_dict['user']['screen_name']
+		followers = tweet_dict['user']['followers_count']
+		retweets = tweet_dict['retweet_count']
+		quotes = tweet_dict['quote_count']
+		replies = tweet_dict['reply_count']
+		favourites = tweet_dict['favorite_count']
+
+		#print(type(time))
+		#print(time)
+
+
+		#print(username, time, tweet, followers, retweets, favourites, replies, quotes)
+		#print()
+
+		# Now I'm going to store the data I've extracted from each tweet into a MySQL database.
+		my_cursor = db.cursor()
+		query = "INSERT INTO bitcoin_tweets(username, tweet, created_at, followers, favourites, retweets, replies, quotes)"
+		query += "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+		data = (username, tweet, time, followers, favourites, retweets, replies, quotes)
+		my_cursor.execute(query, data)
+		db.commit()
 
 		return True
 
