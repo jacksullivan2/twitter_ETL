@@ -5,7 +5,7 @@ from twitter_credentials import *
 import json 
 import mysql.connector
 from datetime import datetime 
-import jack_passwords 
+import jack_passwords
 
 
 	
@@ -59,10 +59,11 @@ class MyListener(StreamListener):
 		# which allows us to easily access the data.
 		tweet_dict = json.loads(data)
 
-		# If I convert our python object (dictionary) back into a JSON string with the indent= argument, this gives us a readable JSON 
+		# (If I convert our python object (dictionary) back into a JSON string with the indent= argument, this gives us a readable JSON 
 		# string which I can make sense of and easily see what to extract. I've looked through this string and worked out what to extract.
-		#print(json.dumps(tweet_dict, indent=2))
+		# print(json.dumps(tweet_dict, indent=2)) ). 
 
+		# Let's extract the data from our dictionary called tweet_dict. 	
 		time = datetime.strptime(tweet_dict['created_at'], "%a %b %d %X %z %Y")
 		tweet = tweet_dict['text']
 		username = tweet_dict['user']['screen_name']
@@ -72,16 +73,10 @@ class MyListener(StreamListener):
 		replies = tweet_dict['reply_count']
 		favourites = tweet_dict['favorite_count']
 
-		#print(type(time))
-		#print(time)
-
-
-		#print(username, time, tweet, followers, retweets, favourites, replies, quotes)
-		#print()
 
 		# Now I'm going to store the data I've extracted from each tweet into a MySQL database.
 		my_cursor = db.cursor()
-		query = "INSERT INTO bitcoin_tweets(username, tweet, created_at, followers, favourites, retweets, replies, quotes)"
+		query = "INSERT INTO bitcoin(username, tweet, created_at, followers, favourites, retweets, replies, quotes)"
 		query += "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
 		data = (username, tweet, time, followers, favourites, retweets, replies, quotes)
 		my_cursor.execute(query, data)
@@ -104,7 +99,10 @@ if __name__ == '__main__':
 	key_words = ['#bitcoin']
 	filename = 'bitcoin.json'
 
+
 	twitter_stream = TwitterStreamer()
 	twitter_stream.stream_tweets(filename, key_words)
+
+
 
 
